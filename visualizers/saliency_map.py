@@ -34,8 +34,9 @@ class SaliencyMap:
         ##############################################################################
         # It only needs a single back-propagation pass
         # set the optimization parameters
-        pass
-
+        output = torch.gather(model(X_var), 1, y_var.unsqueeze(1)).squeeze().sum()
+        output.backward()
+        saliency = X_var.grad.abs().max(1)[0]
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
