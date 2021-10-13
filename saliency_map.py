@@ -26,7 +26,7 @@ for param in model.parameters():
 X, y, class_names = load_imagenet_val(num=5)
 # manually compute saliency maps
 sm = SaliencyMap()
-# sm.show_saliency_maps(X, y, class_names, model)
+sm.show_saliency_maps(X, y, class_names, model)
 
 # ************************************************************************************** #
 
