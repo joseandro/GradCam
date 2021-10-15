@@ -118,29 +118,38 @@ conv_module = model.features[12]
 gradcam_result = gc.grad_cam(X_tensor, y_tensor, model)
 gbp_result = gc.guided_backprop(X_tensor, y_tensor, model)
 
-# print(conv_module.gradient_value)
-# int_grads = IntegratedGradients(model)
-# attr_ig = compute_attributions(int_grads, X_tensor, target=y_tensor, n_steps=10)
-# visualize_attr_maps('visualization/int_grads_captum.png', X, y, class_names, [attr_ig], ['Integrated Gradients'])
+ggc_imgs = []
+for i in range(gradcam_result.shape[0]):
+    gbp_val = gbp_result[i]
+    gradcam_val = np.expand_dims(gradcam_result[i], axis=2)
 
+    # Pointwise multiplication and normalization of the gradcam and guided backprop results (2 lines)
+    img = gradcam_val * gbp_val
+    img = rescale(img)
+    ggc_imgs.append(img)
 
+ggc_imgs = torch.FloatTensor(ggc_imgs)
+ggc_imgs = ggc_imgs.sum(dim=[3]).unsqueeze(0)
+visualize_attr_maps('visualization/guided_gradcam_grads_captum.png', X, y, class_names,
+                    ggc_imgs, ['Guided Gradcam captum output'],
+                    # cmap='gray',
+                    attr_preprocess=lambda attr: attr.detach().numpy())
 
 # Computing Guided BackProp
-# gbp_result = gc.guided_backprop(X_tensor,y_tensor, conv_module)
+gbp_result = torch.FloatTensor(gbp_result)
+gbp_result = gbp_result.sum(dim=[3]).unsqueeze(0)
+visualize_attr_maps('visualization/guided_backprop_grads_captum.png', X, y, class_names,
+                    gbp_result, ['Guided Backprop captum output'],
+                    # cmap='gray',
+                    attr_preprocess=lambda attr: attr.detach().numpy())
+
 
 ##############################################################################
 #                             END OF YOUR CODE                               #
 ##############################################################################
 
 # Try out different layers and see observe how the attributions change
-
-layer = model.features[3]
-
-# Example visualization for using layer visualizations 
-# layer_act = LayerActivation(model, layer)
-# layer_act_attr = compute_attributions(layer_act, X_tensor)
-# layer_act_attr_sum = layer_act_attr.mean(axis=1, keepdim=True)
-
+layer = model.features[12]
 
 ##############################################################################
 # TODO: Visualize Individual Layer Gradcam and Layer Conductance (similar    #
@@ -157,11 +166,16 @@ layer = model.features[3]
 # For layer gradcam look at the usage of the parameter relu_attributions     #
 ##############################################################################
 # Layer gradcam aggregates across all channels
-layer_act = LayerActivation(model, layer)
-layer_act_attr = compute_attributions(layer_act, X_tensor)
-layer_act_attr_sum = layer_act_attr.mean(axis=1, keepdim=True)
-# attr_ig = compute_attributions(int_grads, X_tensor, target=y_tensor, n_steps=10)
-visualize_attr_maps('visualization/FIRST_captum.png', X, y, class_names, [layer_act_attr_sum], ['Gradcam Gradients'])
+layer_gc = LayerGradCam(model, conv_module)
+layer_gc_attr = compute_attributions(layer_gc, X_tensor, target=y_tensor, relu_attributions=True)
+layer_gc_attr_sum = layer_gc_attr.sum(axis=1, keepdim=True)
+visualize_attr_maps('visualization/gradcam_layer_captum.png', X, y, class_names, [layer_gc_attr_sum], ['Layer GradCam Gradients'])
+
+
+layer_co = LayerConductance(model, layer)
+layer_co_attr = compute_attributions(layer_co, X_tensor, target=y_tensor)
+layer_co_attr_sum = layer_co_attr.sum(axis=1, keepdim=True)
+visualize_attr_maps('visualization/conductance_layer_captum.png', X, y, class_names, [layer_co_attr_sum], ['Layer Conductance Gradients'])
 
 ##############################################################################
 #                             END OF YOUR CODE                               #

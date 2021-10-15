@@ -51,9 +51,10 @@ y_tensor = torch.LongTensor(y)
 #       in the comments above this section as an example                     #
 ##############################################################################
 # Computing saliency maps
-int_grads = IntegratedGradients(model)
-attr_ig = compute_attributions(int_grads, X_tensor, target=y_tensor, n_steps=10)
-visualize_attr_maps('visualization/int_grads_captum.png', X, y, class_names, [attr_ig], ['Integrated Gradients'])
+sm = SaliencyMap()
+smap = sm.compute_saliency_maps(X_tensor, y_tensor, model)
+visualize_attr_maps('visualization/sm_grads_captum.png', X, y, class_names,
+                    [smap], ['Saliency captum output'], attr_preprocess=lambda attr: attr.detach().numpy())
 
 ##############################################################################
 #                             END OF YOUR CODE                               #
