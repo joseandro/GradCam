@@ -80,10 +80,11 @@ for i in range(gradcam_result.shape[0]):
     # Pointwise multiplication and normalization of the gradcam and guided backprop results (2 lines)
     img = gradcam_val * gbp_val
 
-    img = np.expand_dims(img.transpose(2, 0, 1), axis=0)
-    img = np.float32(img)
-    img = torch.from_numpy(img)
-    img = deprocess(img)
+    # img = np.expand_dims(img.transpose(2, 0, 1), axis=0)
+    # img = np.float32(img)
+    # img = torch.from_numpy(img)
+    # img = deprocess(img)
+    img = rescale(img)
     plt.subplot(1, 5, i + 1)
     plt.imshow(img)
     plt.title(class_names[y[i]])
@@ -102,7 +103,7 @@ for param in model.parameters():
     param.requires_grad = False
 
 # Convert X and y from numpy arrays to Torch Tensors
-X_tensor = torch.cat([preprocess(Image.fromarray(x)) for x in X], dim=0)
+X_tensor = torch.cat([preprocess(Image.fromarray(x)) for x in X], dim=0).requires_grad_(True)
 y_tensor = torch.LongTensor(y)
 
 conv_module = model.features[12]
@@ -114,9 +115,18 @@ conv_module = model.features[12]
 #       Use conv_module as the convolution layer for gradcam                 #
 ##############################################################################
 # Computing Guided GradCam
+gradcam_result = gc.grad_cam(X_tensor, y_tensor, model)
+gbp_result = gc.guided_backprop(X_tensor, y_tensor, model)
+
+# print(conv_module.gradient_value)
+# int_grads = IntegratedGradients(model)
+# attr_ig = compute_attributions(int_grads, X_tensor, target=y_tensor, n_steps=10)
+# visualize_attr_maps('visualization/int_grads_captum.png', X, y, class_names, [attr_ig], ['Integrated Gradients'])
+
 
 
 # Computing Guided BackProp
+# gbp_result = gc.guided_backprop(X_tensor,y_tensor, conv_module)
 
 ##############################################################################
 #                             END OF YOUR CODE                               #
@@ -147,6 +157,11 @@ layer = model.features[3]
 # For layer gradcam look at the usage of the parameter relu_attributions     #
 ##############################################################################
 # Layer gradcam aggregates across all channels
+layer_act = LayerActivation(model, layer)
+layer_act_attr = compute_attributions(layer_act, X_tensor)
+layer_act_attr_sum = layer_act_attr.mean(axis=1, keepdim=True)
+# attr_ig = compute_attributions(int_grads, X_tensor, target=y_tensor, n_steps=10)
+visualize_attr_maps('visualization/FIRST_captum.png', X, y, class_names, [layer_act_attr_sum], ['Gradcam Gradients'])
 
 ##############################################################################
 #                             END OF YOUR CODE                               #

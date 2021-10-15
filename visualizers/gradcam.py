@@ -33,7 +33,8 @@ class CustomReLU(TorchFunc):
         # Note: torch.addcmul might be useful, and you can access  the input/output  #
         # from the forward pass with self.saved_tensors.                             #
         ##############################################################################
-        pass
+        input_tensor, output_tensor = self.saved_tensors
+        return ((input_tensor > 0).type_as(input_tensor) * (y > 0).type_as(y) * y)
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
@@ -75,7 +76,11 @@ class GradCam:
         #                                                                            #
         # Also note that the output of this function is a numpy.                     #
         ##############################################################################
-        pass
+        output = torch.gather(gc_model(X_tensor), 1, y_tensor.unsqueeze(1)).squeeze().sum()
+        output.backward()
+
+        result = X_tensor.grad.permute(0, 2, 3, 1).detach().numpy()
+        return result
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
@@ -111,7 +116,16 @@ class GradCam:
         # a variable 'cam'. Instructor code would then take care of rescaling it     #
         # back                                                                       #
         ##############################################################################
-        pass
+        output = torch.gather(gc_model(X_tensor), 1, y_tensor.unsqueeze(1)).squeeze().sum()
+        output.backward()
+
+        # Get all gradient means for the N images
+        gradients_mean = torch.mean(self.gradient_value, dim=[2, 3])
+
+        result = torch.einsum('ijkl,ij-> ikl', self.activation_value, gradients_mean)
+
+        # Apply ReLU
+        cam = result.clamp(min=0).detach().numpy()
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
