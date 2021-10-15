@@ -1,6 +1,7 @@
 import torch
 from torch.autograd import Variable
 
+
 class FoolingImage:
     def make_fooling_image(self, X, target_y, model):
         """
@@ -30,7 +31,6 @@ class FoolingImage:
         max_iter = 100  # maximum number of iterations
 
         for it in range(max_iter):
-
             ##############################################################################
             # TODO: Generate a fooling image X_fooling that the model will classify as   #
             # the class target_y. You should perform gradient ascent on the score of the #
@@ -44,11 +44,25 @@ class FoolingImage:
             # You can print your progress (current prediction and its confidence score)  #
             # over iterations to check your gradient ascent progress.                    #
             ##############################################################################
-            pass
+            output = model(X_fooling_var)
+            print('Predicted ', torch.argmax(output).item(), ', GT=', target_y)
+
+            # Did we fool the model?
+            if torch.argmax(output).item() == target_y:
+                break  # no need to continue
+
+            target_output = output[:, target_y]
+            target_output.backward()
+
+            # Normalizing gradient ascent:
+            X_fooling_var.data = X_fooling_var.data + (
+                        learning_rate * (X_fooling_var.grad / torch.norm(X_fooling_var.grad)))
+
+            # Zero it for next iteration
+            X_fooling_var.grad.data.zero_()
             ##############################################################################
             #                             END OF YOUR CODE                               #
             ##############################################################################
-
         X_fooling = X_fooling_var.data
 
         return X_fooling
