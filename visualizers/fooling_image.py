@@ -45,7 +45,7 @@ class FoolingImage:
             # over iterations to check your gradient ascent progress.                    #
             ##############################################################################
             output = model(X_fooling_var)
-            print('Predicted ', torch.argmax(output).item(), ', GT=', target_y)
+            # print('Predicted ', torch.argmax(output).item(), ', GT=', target_y)
 
             # Did we fool the model?
             if torch.argmax(output).item() == target_y:

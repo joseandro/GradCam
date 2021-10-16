@@ -153,13 +153,36 @@ def style_transfer(name, content_image, style_image, image_size, style_size, con
         #   images. Do look at the variables 'decay_lr_at' and 'decayed_lr'.         #
         #   You would need to reduce the learning rate for the last few epochs.      #
         ##############################################################################
+        # Get content loss
+        content_loss_value = content_loss.forward(content_weight,
+                                                  feats[content_layer],# content current is changing at each iteration
+                                                  content_target)
+        # Get style loss
+        style_loss_value = style_loss.forward(feats,
+                                              style_layers,
+                                              style_targets,
+                                              style_weights)
+        # Get tv loss
+        tv_loss_value = tv_loss.forward(img_var, tv_weight)
 
-        
+        # Add all losses together
+        total_loss_value = content_loss_value + style_loss_value + tv_loss_value
 
+        # The optimizer needs to clear its grad before backward in every step.
+        optimizer.zero_grad()
+
+        # Back-propagate it:
+        total_loss_value.backward()
+        optimizer.step()
+
+        # Optimization, we need to decay the lr:
+        if t == decay_lr_at:
+            # Update optimizer with new, now decayed, lr.
+            # Using the Adam, just like given above the TODO:
+            optimizer = torch.optim.Adam([img_var], lr=decayed_lr)
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
-
         # if t % 100 == 0:
         #     print('Iteration {}'.format(t))
         #     plt.axis('off')

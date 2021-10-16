@@ -25,11 +25,20 @@ class StyleLoss(nn.Module):
         # HINT: you may find torch.bmm() function is handy when it comes to process  #
         # matrix product in a batch. Please check the document about how to use it.  #
         ##############################################################################
+        _, C, H, W = features.size()
 
-        pass
+        new_features = features.view(-1, C, H*W)
+        gm = torch.bmm(new_features, new_features.transpose(1, 2))
+
+        if normalize is False:
+            return gm
+
+        #If True, divide the Gram matrix by the number of neurons (H * W * C)
+        return torch.div(gm, (H*W*C))
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
+
     def forward(self, feats, style_layers, style_targets, style_weights):
         """
            Computes the style loss at a set of layers.
@@ -48,7 +57,6 @@ class StyleLoss(nn.Module):
            Returns:
            - style_loss: A PyTorch Variable holding a scalar giving the style loss.
            """
-
         ##############################################################################
         # TODO: Implement style loss function                                        #
         # Please pay attention to use torch tensor math function to finish it.       #
@@ -63,8 +71,17 @@ class StyleLoss(nn.Module):
         # You will need to use your gram_matrix function.                            #
         ##############################################################################
 
-        pass
+        total_loss = 0
+        for i in range(len(style_layers)):
+            features = feats[style_layers[i]]
+            style_target = style_targets[i]
+            weights = style_weights[i]
 
+            gm = self.gram_matrix(features=features)
+
+            delta = weights * ((gm - style_target)**2).sum()
+            total_loss += delta
+        return total_loss
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################

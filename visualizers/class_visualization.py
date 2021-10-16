@@ -83,8 +83,18 @@ class ClassVisualization:
             # L2 regularization term!                                              #
             # Be very careful about the signs of elements in your code.            #
             ########################################################################
+            output = model(img_var)
+            target_output = output[:, target_y]
 
+            target_l2 = target_output - (l2_reg * img_var.data.norm())
+            target_l2.backward()
 
+            gradients = img_var.grad
+            # Normalizing gradients and applying gradient ascent:
+            img_var.data += learning_rate * (gradients / torch.norm(gradients))
+
+            # Zero it for next iteration
+            img_var.grad.zero_()
 
             ########################################################################
             #                             END OF YOUR CODE                         #

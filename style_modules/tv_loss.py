@@ -22,7 +22,12 @@ class TotalVariationLoss(nn.Module):
         # and gradient can not be derived.                                           #
         ##############################################################################
 
-        pass
+        height_vl = torch.sum(torch.pow(img[:, :, :-1, :] - img[:, :, 1:, :], 2))
+        width_vl  = torch.sum(torch.pow(img[:, :, :, :-1] - img[:, :, :, 1:], 2))
+
+        total_variation = width_vl + height_vl
+        return tv_weight * total_variation
+
 
         ##############################################################################
         #                             END OF YOUR CODE                               #

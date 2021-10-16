@@ -22,8 +22,12 @@ class ContentLoss(nn.Module):
         # Otherwise, you may run into the issues later that dynamic graph is broken  #
         # and gradient can not be derived.                                           #
         ##############################################################################
+        _, C, H, W = content_original.size()
 
-        pass
+        mse = torch.pow((content_original - content_current),2)
+        sum = mse.sum()
+        return content_weight * sum
+
         ##############################################################################
         #                             END OF YOUR CODE                               #
         ##############################################################################
